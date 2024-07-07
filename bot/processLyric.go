@@ -1,11 +1,8 @@
 package bot
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/XiaoMengXinX/Music163Api-Go/api"
 	"github.com/XiaoMengXinX/Music163Api-Go/types"
@@ -13,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func processLyricFile(message tgbotapi.Message, bot *tgbotapi.BotAPI) (err error) {
+func processLyric(message tgbotapi.Message, bot *tgbotapi.BotAPI) (err error) {
 	var msgResult tgbotapi.Message
 	sendFailed := func() {
 		editMsg := tgbotapi.NewEditMessageText(msgResult.Chat.ID, msgResult.MessageID, fmt.Sprintf(getLrcFailed))
@@ -77,34 +74,11 @@ func processLyricFile(message tgbotapi.Message, bot *tgbotapi.BotAPI) (err error
 	_ = json.Unmarshal([]byte(result[api.SongDetailAPI]), &detail)
 
 	if lyric.Lrc.Lyric != "" && len(detail.Songs) != 0 {
-		var replacer = strings.NewReplacer("/", " ", "?", " ", "*", " ", ":", " ", "|", " ", "\\", " ", "<", " ", ">", " ", "\"", " ")
-		lrcPath := fmt.Sprintf("%s/%s - %s.lrc", cacheDir, replacer.Replace(parseArtist(detail.Songs[0])), replacer.Replace(detail.Songs[0].Name))
-		file, err := os.OpenFile(lrcPath, os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-			sendFailed()
-			return err
-		} else {
-			defer func(file *os.File) {
-				_ = file.Close()
-			}(file)
-			write := bufio.NewWriter(file)
-			_, _ = write.WriteString(lyric.Lrc.Lyric)
-			err = write.Flush()
-			if err != nil {
-				sendFailed()
-				return err
-			}
-		}
-		defer func(name string) {
-			err := os.Remove(name)
-			if err != nil {
-				logrus.Errorln(err)
-			}
-		}(lrcPath)
-		var newFile tgbotapi.DocumentConfig
-		newFile = tgbotapi.NewDocument(message.Chat.ID, tgbotapi.FilePath(lrcPath))
-		newFile.ReplyToMessageID = message.MessageID
-		_, err = bot.Send(newFile)
+		lyricText := "```lrc\n" + lyric.Lrc.Lyric + "\n```"
+		newMsg := tgbotapi.NewMessage(message.Chat.ID, lyricText)
+		newMsg.ParseMode = tgbotapi.ModeMarkdown
+		newMsg.ReplyToMessageID = message.MessageID
+		_, err = bot.Send(newMsg)
 		if err != nil {
 			return err
 		}

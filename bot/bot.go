@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/XiaoMengXinX/Music163Api-Go/utils"
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 )
 
@@ -132,9 +132,16 @@ func Start(conf map[string]string) (actionCode int) {
 							}
 						}
 					}()
-				case "lyricfile":
+				case "lyric":
 					go func() {
 						err := processLyric(updateMsg, bot)
+						if err != nil {
+							logrus.Errorln(err)
+						}
+					}()
+				case "lyricfile":
+					go func() {
+						err := processLyricFile(updateMsg, bot)
 						if err != nil {
 							logrus.Errorln(err)
 						}

@@ -132,7 +132,7 @@ func Start(conf map[string]string) (actionCode int) {
 							}
 						}
 					}()
-				case "lyric":
+				case "lyricfile":
 					go func() {
 						err := processLyric(updateMsg, bot)
 						if err != nil {
